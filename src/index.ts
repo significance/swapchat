@@ -12,6 +12,7 @@ type StateCallback = (topicHex: string) => void;
 const MSGPERIOD = 1000;
 
 let log = console.log;
+let startedit = false;
 
 function getTmpPrivKey(): any {
 	if (typeof window !== 'undefined' && window != null && window.location != null && window.location.search != null && window.location.search.length > 0) {
@@ -95,20 +96,24 @@ async function checkResponse(session: any):Promise<string|undefined> {
 	}
 }
 
+async function pollResponse(session){
+	const userOther = await checkResponse(session);
+	if (userOther !== undefined) {
+		return;
+	}
+	setTimeout(()=>{
+		pollResponse(session);
+	}, 1000);
+}
+
 // Handle the handshake from the peer that responds to the invitation
 async function startRequest(session: Session, manifestCallback: ManifestCallback):Promise<any> {
 	session.sendHandshake();
 	manifestCallback("", arrayToHex(tmpWallet.privateKey));
 	// hack to increment the session index by one
 	session.client.feeds[session.tmpWallet.address].index++;
-	for (;;) {
-		const nextCheckTime = Date.now() + 1000;
-		const userOther = await checkResponse(session);
-		if (userOther !== undefined) {
-			return;
-		}
-		await waitUntil(nextCheckTime);
-	}
+	pollResponse(session);
+
 }
 
 async function startResponse(session: any):Promise<any> {
@@ -143,7 +148,7 @@ const newSession = (gatewayAddress: string, messageCallback: any) => {
 		return sendEnvelope(envelope)
 	}
 	const poll = async (session:any) => {
-		while (true) {
+		// while (true) {
 			try {
 				// console.debug('poll', session.otherFeed);
 				const soc = await session.getOtherFeed();
@@ -154,10 +159,10 @@ const newSession = (gatewayAddress: string, messageCallback: any) => {
 					message,
 				});
 			} catch (e) {
-				// console.log('polled in vain for other...' + e);
-				break;
+				console.log('polled in vain for other...' + e);
+				// break;
 			}
-		}
+		// }
 		setTimeout(poll, MSGPERIOD, session);
 	}
 
@@ -169,6 +174,9 @@ const newSession = (gatewayAddress: string, messageCallback: any) => {
 	};
 
 	chatSession.start = async (session: any) => {
+		console.log('s')
+		if(startedit === true) return false;
+		startedit = true;
 		await poll(session);
 	};
 	return chatSession;

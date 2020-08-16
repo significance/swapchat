@@ -34,6 +34,7 @@ class Session {
 
 	// BUG: This won't work until bee-client indexes salted feeds by salt+address
 	public async startOtherFeed(topicSalt, other_wallet) {
+		console.log('xxx','startOtherFeed')
 		this.topicSalt = topicSalt;
 		this.selfFeed = this.client.addFeedWithSalt(topicSalt, this.selfWallet);
 		this.otherWallet = other_wallet;
@@ -63,6 +64,7 @@ class Session {
 
 	// HACK until increment is available in lib
 	public _nextFeedIndex() {
+		console.log(['xxx y',this.topicSalt,this.otherWallet.address])
 		this.client.feeds[this.topicSalt][this.otherWallet.address].skip(1);
 	}
 

@@ -5,6 +5,7 @@
         <script defer src="qrcode.min.js"></script>
         <script defer src="index.js"></script>
         <script>
+            let dev = true; 
             var debug = window.location.search.indexOf('debug') > 0;
 
             function log() {
@@ -114,6 +115,9 @@
             }
 
             function makeManifestLink(linkHash, sharedPrivateKey) {
+                if(dev){
+                    return "http://localhost:8080/" + "?" + sharedPrivateKey
+                }
                 var filesPart = linkHash !== "/" ? "/files/" + linkHash : "";
                 log('makeManifestLink', {filesPart, linkHash, sharedPrivateKey});
                 return gatewayAddress + filesPart + "?" + sharedPrivateKey;
@@ -145,7 +149,7 @@
                 log('onLoad', debug, window.location.search);
                 log('location', {location: window.location});
 
-                gatewayAddress = location.origin;
+                gatewayAddress = "http://localhost:8083"
 
                 log('before init', gatewayAddress);
                 try {
@@ -164,7 +168,7 @@
                             var linkHash = getLinkHash(window.location.pathname);
                             var manifestLink = makeManifestLink(linkHash, sharedPrivateKey);
                             addQRCodeToHistory(manifestLink);
-                            addMessageToHistory('<a onclick="copyToClipboard()">copy link</a>', 'bot');
+                            addMessageToHistory('<a class="copyLink" onclick="copyToClipboard()">copy link ></a>', 'bot');
                         },
                         stateCallback: function() {
                             log('stateCallback');
