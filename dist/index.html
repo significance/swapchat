@@ -96,6 +96,18 @@
                 return text;
             }
 
+
+            let debounced = 0;
+            function debounce(func, wait) {
+                setTimeout(() => {
+                    setTimeout(()=>{
+                        debounced = debounced - 1;
+                    }, wait * (debounced + 1))
+                    func();
+                }, wait * (debounced));
+                debounced = debounced+1;
+            }
+
             function sendMessage() {
                 var chatInput = document.getElementById("chatinput");
                 log(chatInput);
@@ -110,10 +122,15 @@
                 }
                 var html = makeHTMLMessage(text);
                 addMessageToHistory(html, 'mine');
-                send(text);
+                debounce(()=>{
+                    send(text);
+                }, 1000);
             }
 
             function makeManifestLink(linkHash, sharedPrivateKey) {
+                if(dev){
+                    return "http://localhost:8080/" + "?" + sharedPrivateKey
+                }
                 var filesPart = linkHash !== "/" ? "/files/" + linkHash : "";
                 log('makeManifestLink', {filesPart, linkHash, sharedPrivateKey});
                 return gatewayAddress + filesPart + "?" + sharedPrivateKey;
