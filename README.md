@@ -27,6 +27,10 @@ This builds the app in a single html file in the `dist` directory. You can uploa
 ```
 You can specify any Bee gateways as an argument. After the upload was successful the script will write out a link to the uploaded website. Copy that link to your browser to open it.
 
+### Development
+
+For easier development configuration, set `DEV_MODE = true` at `./dist/index.html:15`
+
 ### Testing
 
 To test the connection logic:
