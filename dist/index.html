@@ -7,6 +7,8 @@
         <script>
             var debug = window.location.search.indexOf('debug') > 0;
 
+            var browserChatSession;
+
             function log() {
                 if (debug) {
                     var args = Array.prototype.slice.call(arguments);
@@ -110,7 +112,7 @@
                 }
                 var html = makeHTMLMessage(text);
                 addMessageToHistory(html, 'mine');
-                send(text);
+                send(browserChatSession, text);
             }
 
             function makeManifestLink(linkHash, sharedPrivateKey) {
@@ -173,6 +175,8 @@
                             document.getElementById("chatinput").focus();
                         },
                         logFunction: log,
+                    }).then((session)=>{
+                        browserChatSession = session;
                     });
                 } catch (e) {
                     log('init failed', e.message, e);

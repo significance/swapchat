@@ -23,21 +23,24 @@ class Session {
 		this.client = client;
 		this.selfWallet = selfWallet;
 		this.tmpWallet = tmpWallet;
+		this.logFunction = console.debug;
+	}
+
+	public async initSession(skipFirst: boolean){
 		if (skipFirst) {
 			console.log('skip');
-			this.sharedFeed = client.addFeed(tmpWallet, 1); //new dfeeds.indexed(topic);
+			this.sharedFeed = await this.client.addFeed(this.tmpWallet, 1); //new dfeeds.indexed(topic);
 		} else {
-			this.sharedFeed = client.addFeed(tmpWallet); //new dfeeds.indexed(topic);
+			this.sharedFeed = await this.client.addFeed(this.tmpWallet); //new dfeeds.indexed(topic);
 		}
-		this.logFunction = console.debug;
 	}
 
 	// BUG: This won't work until bee-client indexes salted feeds by salt+address
 	public async startOtherFeed(topicSalt, other_wallet) {
 		this.topicSalt = topicSalt;
-		this.selfFeed = this.client.addFeedWithSalt(topicSalt, this.selfWallet);
+		this.selfFeed = await this.client.addFeedWithSalt(topicSalt, this.selfWallet);
 		this.otherWallet = other_wallet;
-		this.otherFeed = this.client.addFeedWithSalt(topicSalt, this.otherWallet, 0);
+		this.otherFeed = await this.client.addFeedWithSalt(topicSalt, this.otherWallet, 0);
 		return true;
 	}
 
@@ -56,14 +59,17 @@ class Session {
 	}
 
 	public async getOtherFeed() {
-		let p = await this.client.getFeedWithSalt(this.topicSalt, this.otherWallet);
-		this._nextFeedIndex();
+		let p = await this.client.getFeedWithSaltAndIncrement(this.topicSalt, this.otherWallet);
+		// this._nextFeedIndex();
 		return p;
 	}
 
 	// HACK until increment is available in lib
 	public _nextFeedIndex() {
-		this.client.feeds[this.topicSalt][this.otherWallet.address].skip(1);
+		let b = this.client.feeds[this.topicSalt][this.otherWallet.address].current();
+		this.client.feeds[this.topicSalt][this.otherWallet.address].next();
+		let a = this.client.feeds[this.topicSalt][this.otherWallet.address].current();
+		console.log('after and before _nextFeedIndex',a,b);
 	}
 
 	public setSecret(secret) {

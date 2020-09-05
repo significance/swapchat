@@ -56,7 +56,7 @@ topicTmpArray = topicTmpArray.slice(0, 20);
 console.log('topic', arrayToHex(topicTmpArray));
 
 // the master session
-let chatSession: Session = undefined;
+// let chatSession: Session = undefined;
 
 
 // if bz is supplied, will update tmp feed
@@ -65,9 +65,9 @@ async function connectToPeer(session: any, handshakeOther:any) {
 	// and start the chat session with that info
 	otherWallet = wallet.newReadOnlyWallet(handshakeOther);
 	const secretBytes = await derive(selfWallet.privateKey, otherWallet.publicKey);
-	chatSession.setSecret(secretBytes);
-	chatSession.startOtherFeed(secretBytes, otherWallet);
-	await chatSession.start(session);
+	session.setSecret(secretBytes);
+	await session.startOtherFeed(secretBytes, otherWallet);
+	await session.start(session);
 	return otherWallet;
 }
 
@@ -78,10 +78,10 @@ async function connectToPeerTwo(session: any, handshakeOther:any) {
 
 	const secretBytes = await derive(selfWallet.privateKey, otherWallet.publicKey);
 
-	chatSession.setSecret(secretBytes);
-	chatSession.startOtherFeed(secretBytes, otherWallet);
-	chatSession.sendHandshake();
-	await chatSession.start(session);
+	session.setSecret(secretBytes);
+	await session.startOtherFeed(secretBytes, otherWallet);
+	session.sendHandshake();
+	await session.start(session);
 	return otherWallet;
 }
 
@@ -118,7 +118,7 @@ async function startResponse(session: any):Promise<any> {
 }
 
 
-const newSession = (gatewayAddress: string, messageCallback: any) => {
+const newSession = async (gatewayAddress: string, messageCallback: any) => {
 	const sendEnvelope = async (envelope) => {
 		const envelopeJson = JSON.stringify(envelope)
 		console.debug('I would have sent this message', envelope);
@@ -154,15 +154,16 @@ const newSession = (gatewayAddress: string, messageCallback: any) => {
 					message,
 				});
 			} catch (e) {
-				// console.log('polled in vain for other...' + e);
+				console.log('polled in vain for other...' + e);
 				break;
 			}
 		}
 		setTimeout(poll, MSGPERIOD, session);
 	}
 
-	const client = new BeeClient(gatewayAddress);
-	chatSession = new Session(client, selfWallet, tmpWallet, keyTmpRequestPriv != undefined);
+	const client = new BeeClient(gatewayAddress, {timeout: 100});
+	const chatSession = new Session(client, selfWallet, tmpWallet, keyTmpRequestPriv != undefined);
+	await chatSession.initSession(keyTmpRequestPriv != undefined);
 	chatSession.sendMessage = async (message: string) => {
 		const encryptedMessage = await encrypt(message, chatSession.secret);
 		let r = await chatSession.client.updateFeedWithSalt(chatSession.secret, encryptedMessage, chatSession.selfWallet);
@@ -174,7 +175,7 @@ const newSession = (gatewayAddress: string, messageCallback: any) => {
 	return chatSession;
 }
 
-export function init(params: {
+export async function init(params: {
 	gatewayAddress: string,
 	messageCallback: any,
 	manifestCallback: ManifestCallback,
@@ -185,7 +186,7 @@ export function init(params: {
 	log('init called');
 
 	// TODO: this guy is global. let's pass him around instead, perhaps?
-	chatSession = newSession(params.gatewayAddress, params.messageCallback);
+	const chatSession = await newSession(params.gatewayAddress, params.messageCallback);
 	if (keyTmpRequestPriv === undefined) {
 		log('start request');
 		startRequest(chatSession, params.manifestCallback).then(() => {
@@ -205,11 +206,12 @@ export function init(params: {
 			log("error starting response: ", e);
 		});
 	}
+	return chatSession;
 }
 
-export function send(message: string) {
+export function send(session: Session, message: string) {
 	try {
-		chatSession.sendMessage(message);
+		session.sendMessage(message);
 	} catch(e) {
 		console.error(e);
 	}
