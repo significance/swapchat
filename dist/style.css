@@ -37,8 +37,8 @@ html, body{
 }
 
 .qrcode {
-    width: 250px;
-    height: 250px;
+    width: 200px;
+    height: 200px;
     padding: 10px;
     background: yellow;
     margin: 10px;
@@ -48,6 +48,13 @@ html, body{
     font-size: 3vmax;
 }
 */
+
+#chatinput{
+    outline: 0;
+    border-radius: 0;
+    line-height: 27px;
+}
+
 .sendButton {
 	height: 48px;
 	padding-left: 14px;
@@ -165,6 +172,12 @@ ul.history {
 }
 
 @media (max-width: 600px) {
+
+  .history {
+    margin: 0 auto;
+    min-height: 70vh;
+  }
+
   .sendcontainer-desktop {
     display: none !important;
   }
